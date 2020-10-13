@@ -81,21 +81,50 @@ void dg_cli(int sockfd, const SA *pservaddr, int servlen)
     {
         sendline[i] = '\0';
     }
-    printf("\nEnter 16 char text: ");
+    printf("\nPress enter to start encryption..");
     while (fgets(sendline, MAXLINE, stdin) != NULL)
     {
-        int msgSize = countChars(sendline);
-        if (msgSize != 17)
+        //file starts
+        FILE *fp;
+        long lSize;
+        char *buffer;
+
+        fp = fopen("dummy.txt", "rb");
+        if (!fp)
+            perror("dummy.txt"), exit(1);
+
+        fseek(fp, 0L, SEEK_END);
+        lSize = ftell(fp);
+        rewind(fp);
+
+        /* allocate memory for entire content */
+        buffer = calloc(1, lSize + 1);
+        if (!buffer)
+            fclose(fp), fputs("memory alloc fails", stderr), exit(1);
+
+        /* copy the file into the buffer */
+        if (1 != fread(buffer, lSize, 1, fp))
+            fclose(fp), free(buffer), fputs("entire read fails", stderr), exit(1);
+        //file ends
+
+        int msgSize = strlen(buffer);
+        if (msgSize != 16)
         {
-            printf("Not 16 chars Try again!!\n");
-            for (int i = 0; i < MAXLINE; i++)
-            {
-                sendline[i] = '\0';
-            }
-            printf("\nEnter 16 char text: ");
-            continue;
+            printf("\nFile Size is not 16 bytes!!\n");
+            break;
+            // for (int i = 0; i < MAXLINE; i++)
+            // {
+            //     sendline[i] = '\0';
+            // }
+            // printf("\nEnter 16 char text: ");
+            // continue;
         }
-        sendline[MAXLINE] = '\0';
+        for (int k = 0; k < 16; k++)
+        {
+            sendline[k] = buffer[k];
+        }
+        free(buffer);
+        sendline[16] = '\0';
         //AES Starts here
 
         for (i = 0; i < 16; i++)
@@ -103,7 +132,7 @@ void dg_cli(int sockfd, const SA *pservaddr, int servlen)
             in[i] = (uint8_t)sendline[i];
         }
 
-        printf("\nPlaintext message: ");
+        printf("\nPlaintext message from file \"dummy.txt\": ");
         for (i = 0; i < 4; i++)
         {
             // printf("%02x %02x %02x %02x ", in[4 * i + 0], in[4 * i + 1], in[4 * i + 2], in[4 * i + 3]);
@@ -145,7 +174,8 @@ void dg_cli(int sockfd, const SA *pservaddr, int servlen)
             sendline[i] = '\0';
         }
         printf("\nEncrypted message sent to Server successfully.");
-        printf("\n\nEnter 16 char text: ");
+        // printf("\n\nEnter 16 char text: ");
+        break;
     }
 }
 
