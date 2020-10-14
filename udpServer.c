@@ -106,13 +106,13 @@ int main(int argc, char **argv)
 		{
 			printf("%c", encryptedText[k]);
 		}
-		printf("\n\nEncrypted Hexadecimal:\n\n");
+		printf("\n\nEncrypted 128 byte Hexadecimal:\n\n");
 		for (int k = 0; k < 128; k++)
 		{
 			printf("%02x ", (uint8_t)encryptedText[k]);
 		}
-		printf("\n\nDecrypting...");
-		printf("\nDecrypted Hexadecimal:\n\n");
+		printf("\n\nDecrypting using AES algorithm...");
+		printf("\n\nDecrypted 128 byte Hexadecimal:\n\n");
 		for (int k = 0; k < 128; k++)
 		{
 			printf("%02x ", (uint8_t)decryptText[k]);

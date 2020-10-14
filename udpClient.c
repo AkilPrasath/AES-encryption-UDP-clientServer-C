@@ -134,13 +134,13 @@ void dg_cli(int sockfd, const SA *pservaddr, int servlen)
         printf("\nPlaintext message from file \"dummy.txt\":\n\n");
         printf(" %s", buffer);
         printf("\n");
-        printf("\nHexadecimal Representation:\n\n");
+        printf("\n128 byte Plain Hexadecimal Data:\n\n");
         for (int r = 0; r < 128; r++)
         {
             printf("%02x ", (uint8_t)buffer[r]);
         }
-        printf("\n");
-        printf("\nEncrypted message:\n\n");
+        printf("\n\nEncrypting using AES algorithm...");
+        printf("\n\nEncrypted message:\n\n");
         totalCipher[128] = '\0';
         printf("%s", totalCipher);
         printf("\n");
