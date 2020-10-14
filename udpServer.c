@@ -120,6 +120,18 @@ int main(int argc, char **argv)
 
 		printf("\n\nDecrypted Text:\n\n%s\n", decryptText);
 
+		printf("\nWriting decrypted data to \"decrypt.txt\"...");
+		FILE *file = fopen("decrypt.txt", "w");
+
+		int results = fputs(decryptText, file);
+		if (results == EOF)
+		{
+			// Failed to write do error code here.
+			printf("\nFailed writing data to \"decrypt.txt\"!");
+		}
+		fclose(file);
+		printf("\nDecrypted data written to \"decrypt.txt\" successfully!!");
+		system("decrypt.txt");
 		for (int i = 0; i < MAXLINE; i++)
 		{
 			mesg[i] = '\0';
