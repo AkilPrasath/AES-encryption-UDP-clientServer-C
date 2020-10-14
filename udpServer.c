@@ -70,45 +70,56 @@ int main(int argc, char **argv)
 	for (;;)
 	{
 		len = sizeof(cliaddr);
-		if ((n = recvfrom(sockfd, mesg, MAXLINE, 0, (SA *)&cliaddr, &len)) == SOCKET_ERROR)
-			errexit("recvfrom error: error number %d\n", WSAGetLastError());
-		uint8_t out[16];
-		uint8_t in[16];
-		uint8_t i;
-		printf("\n\nEncrypted message received");
-		printf("\nReceived Encrypted Message: ");
-		for (int t = 0; t < 16; t++)
+		char decryptText[128];
+		char encryptedText[128];
+
+		//8 batches of 16 byte decryption
+		// 8 * 16 = 128 bytes
+		for (int j = 0; j < 8; j++)
 		{
-			// printf("%02x ", (uint8_t)mesg[t]);
-			printf("%c", mesg[t]);
-			out[t] = (uint8_t)mesg[t];
+			if ((n = recvfrom(sockfd, mesg, MAXLINE, 0, (SA *)&cliaddr, &len)) == SOCKET_ERROR)
+				errexit("recvfrom error: error number %d\n", WSAGetLastError());
+			uint8_t out[16];
+			uint8_t in[16];
+			uint8_t i;
+			for (int t = 0; t < 16; t++)
+			{
+				out[t] = (uint8_t)mesg[t];
+				encryptedText[(16 * j) + t] = mesg[t];
+			}
+			//Decryption
+			aes_inv_cipher(out, in, w);
+			for (int k = 0; k < 16; k++)
+			{
+				decryptText[(16 * j) + k] = (char)in[k];
+			}
+			if (sendto(sockfd, mesg, n, 0, (SA *)&cliaddr, len) == SOCKET_ERROR)
+				errexit("sendto error: error number %d\n", WSAGetLastError());
+			for (int i = 0; i < MAXLINE; i++)
+			{
+				mesg[i] = '\0';
+			}
 		}
-		printf("\n");
-
-		printf("\nDecrypting Cipher...");
-
-		aes_inv_cipher(out, in, w);
-
-		printf("\nDecryption Successful");
-
-		printf("\n\nHexadecimal Representation: ");
-
-		for (i = 0; i < 4; i++)
+		decryptText[128] = '\0';
+		printf("\nReceived Encrypted Text:\n\n");
+		for (int k = 0; k < 128; k++)
 		{
-			printf("%02x %02x %02x %02x ", in[4 * i + 0], in[4 * i + 1], in[4 * i + 2], in[4 * i + 3]);
+			printf("%c", encryptedText[k]);
 		}
-		printf("\n");
-		printf("Decrypted message: ");
-		for (i = 0; i < 4; i++)
+		printf("\n\nEncrypted Hexadecimal:\n\n");
+		for (int k = 0; k < 128; k++)
 		{
-			// printf("%02x %02x %02x %02x ", in[4 * i + 0], in[4 * i + 1], in[4 * i + 2], in[4 * i + 3]);
-			printf("%c%c%c%c", (char)in[4 * i + 0], (char)in[4 * i + 1], (char)in[4 * i + 2], (char)in[4 * i + 3]);
+			printf("%02x ", (uint8_t)encryptedText[k]);
+		}
+		printf("\n\nDecrypting...");
+		printf("\nDecrypted Hexadecimal:\n\n");
+		for (int k = 0; k < 128; k++)
+		{
+			printf("%02x ", (uint8_t)decryptText[k]);
 		}
 
-		printf("\n");
+		printf("\n\nDecrypted Text:\n\n%s\n", decryptText);
 
-		if (sendto(sockfd, mesg, n, 0, (SA *)&cliaddr, len) == SOCKET_ERROR)
-			errexit("sendto error: error number %d\n", WSAGetLastError());
 		for (int i = 0; i < MAXLINE; i++)
 		{
 			mesg[i] = '\0';

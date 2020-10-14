@@ -77,10 +77,6 @@ void dg_cli(int sockfd, const SA *pservaddr, int servlen)
     w = aes_init(sizeof(key));
     aes_key_expansion(key, w);
 
-    for (int i = 0; i < MAXLINE; i++)
-    {
-        sendline[i] = '\0';
-    }
     printf("\nPress enter to start encryption..");
     while (fgets(sendline, MAXLINE, stdin) != NULL)
     {
@@ -108,73 +104,49 @@ void dg_cli(int sockfd, const SA *pservaddr, int servlen)
         //file ends
 
         int msgSize = strlen(buffer);
-        if (msgSize != 16)
+        if (msgSize != 128)
         {
-            printf("\nFile Size is not 16 bytes!!\n");
+            printf("\nThe file size of \"dummy.txt\" is not 128 bytes!!\n");
             break;
-            // for (int i = 0; i < MAXLINE; i++)
-            // {
-            //     sendline[i] = '\0';
-            // }
-            // printf("\nEnter 16 char text: ");
-            // continue;
         }
-        for (int k = 0; k < 16; k++)
+        char totalCipher[128];
+        for (int i = 0; i < 8; i++)
         {
-            sendline[k] = buffer[k];
-        }
-        free(buffer);
-        sendline[16] = '\0';
-        //AES Starts here
+            uint8_t in[16];
+            uint8_t out[16];
+            for (int j = 0; j < 16; j++)
+            {
+                in[j] = (uint8_t)buffer[(16 * i) + j];
+            }
+            aes_cipher(in /* in */, out /* out */, w /* expanded key */);
+            char cipher[16];
+            for (int j = 0; j < 16; j++)
+            {
+                cipher[j] = (char)out[j];
+                totalCipher[(16 * i) + j] = (char)out[j];
+            }
+            if (sendto(sockfd, cipher, 16, 0, pservaddr, servlen) == SOCKET_ERROR)
+                errexit("sendto error: error number %d\n", WSAGetLastError());
 
-        for (i = 0; i < 16; i++)
-        {
-            in[i] = (uint8_t)sendline[i];
+            if ((n = recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL)) == SOCKET_ERROR)
+                errexit("recvfrom error: error number %d\n", WSAGetLastError());
         }
-
-        printf("\nPlaintext message from file \"dummy.txt\": ");
-        for (i = 0; i < 4; i++)
+        printf("\nPlaintext message from file \"dummy.txt\":\n\n");
+        printf(" %s", buffer);
+        printf("\n");
+        printf("\nHexadecimal Representation:\n\n");
+        for (int r = 0; r < 128; r++)
         {
-            // printf("%02x %02x %02x %02x ", in[4 * i + 0], in[4 * i + 1], in[4 * i + 2], in[4 * i + 3]);
-            printf("%c%c%c%c", sendline[4 * i + 0], sendline[4 * i + 1], sendline[4 * i + 2], sendline[4 * i + 3]);
+            printf("%02x ", (uint8_t)buffer[r]);
         }
         printf("\n");
-        printf("\nHexadecimal Representation: ");
-        for (i = 0; i < 4; i++)
-        {
-            printf("%02x %02x %02x %02x ", in[4 * i + 0], in[4 * i + 1], in[4 * i + 2], in[4 * i + 3]);
-        }
-        printf("\n");
-        aes_cipher(in /* in */, out /* out */, w /* expanded key */);
-
-        printf("\nEncrypted message: ");
-        char cipherText[16];
-        for (i = 0; i < 4; i++)
-        {
-            cipherText[4 * i + 0] = (char)out[4 * i + 0];
-            cipherText[4 * i + 1] = (char)out[4 * i + 1];
-            cipherText[4 * i + 2] = (char)out[4 * i + 2];
-            cipherText[4 * i + 3] = (char)out[4 * i + 3];
-            printf("%c%c%c%c", cipherText[4 * i + 0], cipherText[4 * i + 1], cipherText[4 * i + 2], cipherText[4 * i + 3]);
-        }
+        printf("\nEncrypted message:\n\n");
+        totalCipher[128] = '\0';
+        printf("%s", totalCipher);
         printf("\n");
         printf("\nSending Encrypted message...");
-        //AES ends here
-        // if (sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen) == SOCKET_ERROR)
-        if (sendto(sockfd, cipherText, 16, 0, pservaddr, servlen) == SOCKET_ERROR)
-            errexit("sendto error: error number %d\n", WSAGetLastError());
-
-        if ((n = recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL)) == SOCKET_ERROR)
-            errexit("recvfrom error: error number %d\n", WSAGetLastError());
-
-        recvline[n] = '\0';
-        // fputs(recvline, stdout);
-        for (int i = 0; i < MAXLINE; i++)
-        {
-            sendline[i] = '\0';
-        }
         printf("\nEncrypted message sent to Server successfully.");
-        // printf("\n\nEnter 16 char text: ");
+
         break;
     }
 }
