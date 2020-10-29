@@ -15,6 +15,72 @@
 #define SA struct sockaddr
 #define MAXLINE 4096
 #define SERV_PORT 4567
+void compare()
+{
+	//file starts
+	FILE *fp;
+	long lSize;
+	char *buffer;
+
+	fp = fopen("dummy.txt", "rb");
+	if (!fp)
+		perror("dummy.txt"), exit(1);
+
+	fseek(fp, 0L, SEEK_END);
+	lSize = ftell(fp);
+	rewind(fp);
+
+	/* allocate memory for entire content */
+	buffer = calloc(1, lSize + 1);
+	if (!buffer)
+		fclose(fp), fputs("memory alloc fails", stderr), exit(1);
+
+	/* copy the file into the buffer */
+	if (1 != fread(buffer, lSize, 1, fp))
+		fclose(fp), free(buffer), fputs("entire read fails", stderr), exit(1);
+	//file ends
+
+	//file starts
+	FILE *fp1;
+	long lSize1;
+	char *buffer1;
+
+	fp1 = fopen("decrypt.txt", "rb");
+	if (!fp1)
+		perror("decrypt.txt"), exit(1);
+
+	fseek(fp1, 0L, SEEK_END);
+	lSize1 = ftell(fp1);
+	rewind(fp1);
+
+	/* allocate memory for entire content */
+	buffer1 = calloc(1, lSize1 + 1);
+	if (!buffer1)
+		fclose(fp1), fputs("memory alloc fails", stderr), exit(1);
+
+	/* copy the file into the buffer */
+	if (1 != fread(buffer1, lSize1, 1, fp1))
+		fclose(fp1), free(buffer1), fputs("entire read fails", stderr), exit(1);
+	//file ends
+	int isEqual = 1;
+	for (int i = 0; i < strlen(buffer1); i++)
+	{
+		if (buffer[i] != buffer1[i])
+		{
+			isEqual = 0;
+			break;
+		}
+	}
+	printf("\nFile Compared!!");
+	if (isEqual)
+	{
+		printf("\n\"Dummy.txt\" and \"Decrypt.txt\" files matched!");
+	}
+	else
+	{
+		printf("\n\"Dummy.txt\" and \"Decrypt.txt\" files does not matched!");
+	}
+}
 
 void errexit(const char *format, ...)
 {
@@ -70,6 +136,8 @@ int main(int argc, char **argv)
 	for (;;)
 	{
 		len = sizeof(cliaddr);
+
+		//starts here
 		char decryptText[128];
 		char encryptedText[128];
 
@@ -130,7 +198,10 @@ int main(int argc, char **argv)
 			printf("\nFailed writing data to \"decrypt.txt\"!");
 		}
 		fclose(file);
+
 		printf("\nDecrypted data written to \"decrypt.txt\" successfully!!");
+		printf("\nInitiating File Comparision...");
+		compare();
 		system("decrypt.txt");
 		for (int i = 0; i < MAXLINE; i++)
 		{
